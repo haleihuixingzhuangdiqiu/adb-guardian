@@ -1,0 +1,8 @@
+appId: dev.local.adbguardian
+---
+- assertVisible: "开始守护"
+- tapOn:
+    id: "dev.local.adbguardian:id/toggle"
+- extendedWaitUntil:
+    visible: "守护运行中"
+    timeout: 15000

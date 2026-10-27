@@ -1,0 +1,13 @@
+appId: dev.local.adbguardian
+---
+# 前置：未信任网络上的系统确认框已弹出。
+- assertVisible: "Allow wireless debugging on this network?"
+- tapOn:
+    id: "android:id/button2"
+- extendedWaitUntil:
+    visible: "需要确认系统设置"
+    timeout: 12000
+- assertVisible: "确认后重试"
+- tapOn:
+    id: "dev.local.adbguardian:id/toggle"
+- assertVisible: "守护已停止"

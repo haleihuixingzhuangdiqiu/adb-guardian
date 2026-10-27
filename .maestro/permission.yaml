@@ -1,0 +1,10 @@
+appId: dev.local.adbguardian
+---
+# 由验证入口用 adb 启动；不使用 launchApp，避免 Maestro 自动授予 development 权限。
+- assertVisible: ".*授权.*未授予.*"
+- tapOn:
+    id: "dev.local.adbguardian:id/toggle"
+- assertVisible: "尚未完成一次性授权，请先完成下方配置。"
+- tapOn:
+    id: "android:id/button1"
+- assertVisible: "开始守护"

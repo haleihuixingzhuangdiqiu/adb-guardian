@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:fillViewport="true" android:clipToPadding="false">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="24dp">
+        <TextView style="@style/Body" android:text="@string/app_name" android:textSize="30sp"
+            android:textStyle="bold" android:textColor="@color/ink" />
+        <TextView style="@style/Body" android:text="@string/subtitle" android:layout_marginTop="4dp"
+            android:layout_marginBottom="24dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="24dp" android:background="@drawable/hero">
+            <TextView android:id="@+id/status" style="@style/Body" android:text="@string/state_idle"
+                android:textSize="23sp" android:textStyle="bold" android:textColor="@color/surface"
+                android:accessibilityLiveRegion="polite" />
+            <TextView android:id="@+id/detail" style="@style/Body" android:text="@string/state_help"
+                android:textColor="@color/hero_secondary" android:layout_marginTop="12dp" />
+            <TextView android:id="@+id/last_check" style="@style/Body" android:textColor="@color/hero_secondary"
+                android:textSize="13sp" android:layout_marginTop="16dp" />
+        </LinearLayout>
+        <TextView android:id="@+id/facts" style="@style/Body" android:layout_marginTop="16dp"
+            android:layout_marginBottom="12dp" />
+        <Button android:id="@+id/toggle" style="@style/ActionButton" android:text="@string/start"
+            android:backgroundTint="@color/ink" android:textColor="@color/surface" />
+        <Button android:id="@+id/retry" style="@style/ActionButton" android:text="@string/retry"
+            android:visibility="gone" />
+        <Button android:id="@+id/wireless_settings" style="@style/ActionButton"
+            android:text="@string/wireless_settings" />
+        <TextView style="@style/Body" android:text="@string/scope_help" android:textSize="13sp"
+            android:layout_marginTop="8dp" android:layout_marginBottom="24dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="20dp" android:background="@drawable/card">
+            <TextView style="@style/SectionTitle" android:text="@string/setup_title" />
+            <TextView style="@style/Body" android:text="@string/setup_body" />
+            <TextView android:id="@+id/command" style="@style/Body" android:text="@string/permission_command"
+                android:fontFamily="monospace" android:textSize="13sp" android:textIsSelectable="true"
+                android:layout_marginTop="16dp" android:layout_marginBottom="8dp" />
+            <Button android:id="@+id/copy" style="@style/ActionButton" android:text="@string/copy_command" />
+            <TextView style="@style/Body" android:text="@string/command_hint" android:textSize="13sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="20dp" android:background="@drawable/card"
+            android:layout_marginTop="20dp">
+            <TextView style="@style/SectionTitle" android:text="@string/power_title" />
+            <Switch android:id="@+id/keep_awake" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="56dp" android:text="@string/keep_awake"
+                android:textSize="16sp" android:textColor="@color/ink" android:switchPadding="16dp" />
+            <TextView style="@style/Body" android:text="@string/power_help" android:textSize="13sp" />
+            <Button android:id="@+id/background" style="@style/ActionButton"
+                android:text="@string/background_settings" android:layout_marginTop="12dp" />
+            <TextView style="@style/Body" android:text="@string/background_help" android:textSize="13sp" />
+        </LinearLayout>
+        <TextView style="@style/SectionTitle" android:text="@string/events_title" android:layout_marginTop="28dp" />
+        <TextView android:id="@+id/events" style="@style/Body" android:text="@string/no_events"
+            android:textSize="13sp" android:textIsSelectable="true" />
+    </LinearLayout>
+</ScrollView>

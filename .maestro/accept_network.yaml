@@ -1,0 +1,19 @@
+appId: dev.local.adbguardian
+---
+# 前置：通过指定设备的 activate 完成授权，主页面可见。
+- tapOn:
+    id: "dev.local.adbguardian:id/toggle"
+- tapOn:
+    id: "dev.local.adbguardian:id/retry"
+    optional: true
+- extendedWaitUntil:
+    visible: "Allow wireless debugging on this network?"
+    timeout: 10000
+- tapOn:
+    id: "android:id/alwaysUse"
+- tapOn:
+    id: "android:id/button1"
+- extendedWaitUntil:
+    visible: "守护运行中"
+    timeout: 40000
+- assertVisible: ".*无线调试开关.*已开启.*"

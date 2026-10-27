@@ -1,0 +1,7 @@
+appId: dev.local.adbguardian
+---
+- assertVisible: "守护运行中"
+- tapOn:
+    id: "dev.local.adbguardian:id/toggle"
+- assertVisible: "守护已停止"
+- assertVisible: "开始守护"

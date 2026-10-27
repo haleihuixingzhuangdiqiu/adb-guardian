@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "devices": [
+    {
+      "serialno": "EXAMPLE_SERIAL_REPLACE_WITH_RO_SERIALNO",
+      "guid": null,
+      "model": "示例，请使用 activate 生成真实私有配置",
+      "endpoint": null,
+      "usb_serial": "EXAMPLE_USB_SERIAL"
+    }
+  ]
+}
