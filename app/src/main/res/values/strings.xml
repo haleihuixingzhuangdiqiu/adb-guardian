@@ -30,7 +30,7 @@
     <string name="screen_overlay_settings">打开系统悬浮窗授权设置</string>
     <string name="screen_overlay_permission_granted">悬浮窗权限：已允许</string>
     <string name="screen_overlay_permission_missing">悬浮窗权限：未允许，兼容模式无法请求屏幕保持</string>
-    <string name="screen_overlay_help">部分小米系统需要保留可见状态条，才能在后台保持屏幕。启用后请允许悬浮窗，并保留屏幕边缘的小条；它不响应触摸。\n仅在已解锁且屏幕保持条件满足时显示，关屏或暂停时移除。不同系统仍可能限制效果。</string>
+    <string name="screen_overlay_help">部分小米和 vivo 系统需要此兼容模式。请允许悬浮窗并保留侧边状态条；它不响应触摸。仅在已解锁且屏幕保持条件满足时运行，实际效果需按机型验证。\n关屏或保护暂停时停止保持；手动关屏不会自动点亮。vivo 关闭保持后，屏幕可能仍需等待原来的熄屏时间（当前若设为10分钟，可能再等约10分钟）。</string>
     <string name="screen_waiting">屏幕保持：关屏等待，手动亮屏后再检查</string>
     <string name="screen_protection">屏幕保持：保护暂停（电量、温度或数据不足）</string>
     <string name="screen_unsupported">屏幕保持：系统不支持</string>

@@ -85,4 +85,18 @@ APK 位于 `app/build/outputs/apk/debug/app-debug.apk`。验证原始证据保�
 
 最终 APK SHA-256：`9efe3023f508fcc1202ac021a5a25d1fe6107b20897656ee4267707cde206509`。
 
+### 0.2.1 vivo 后台屏幕保持（versionCode 3）
+
+0.2.1 修复本次两台 vivo V2055A 在后台仍按超时自动关屏的问题。上方 0.2.0 的交付记录、APK 哈希与小米实测属于原版本。其他型号及系统仍需验证，不能把申请成功当作实际保持成功。
+
+仅 `Build.MANUFACTURER` 为 vivo（不区分大小写）且用户开启“兼容悬浮状态条”时，在既有检查中尝试单独的 `SCREEN_DIM_WAKE_LOCK | ON_AFTER_RELEASE`：同步 acquire 后立即在 finally 中 release，不跨回调持有。原普通 DIM 锁仍不带 `ON_AFTER_RELEASE`；小米及其他厂商保持原路径。复用屏幕保护策略的 ACTIVE 判定，并在申请前复查守护运行/就绪、屏幕保持与兼容选项、interactive、实际解锁、悬浮权限及窗口仍附着可见。窗口状态检查不代表 OEM 实际允许保屏，效果仍需实测。
+
+使用 `elapsedRealtime` 单调时钟将尝试限制为最多每 30 秒一次，初次允许可立即尝试；电池、热状态和 Activity 的密集回调不增加频率，暂停或切换选项不重置限频。停止、关闭选项、关屏、保护或未知安全数据时不新增 pulse；释放路径不补 pulse。不新增后台循环、闹钟、CPU 锁或权限，不改亮度、原系统熄屏超时（本次设备为 600000 ms），不模拟电池或充电。
+
+**停止残留：停止/保护暂停会停止主动续时并释放锁，不能承诺立即息屏。** 已核验的 vivo framework 对普通 DIM 锁的释放也可能续时，所以应从最后一次有效 release（可能就是停止时）计算，而不是最后一次 pulse。在没有新交互、其他保屏来源且原超时为 10 分钟的条件下，DIM 仍可能继续约 10 分钟。普通进程死亡也不等于停止：服务沿用 `START_STICKY`，系统重启后若仍满足条件，可能继续申请。长期亮屏仍有耗电和屏幕损耗。
+
+本次两台 V2055A（Android 13 / 14）均已覆盖升级并保留数据；实际连续无交互分别达到 750.199 秒、746.857 秒，仍为 ON/DIM，亮度未周期性回升。沿用原 600000 ms 熄屏时间、手动亮度值 255 和手动模式，电池保持真实更新。两台模拟电源键关屏后持续观察约 79 秒，均保持 OFF，屏幕锁与浮层已移除，无后续续时；主动亮屏后可恢复。正常停止（Android 14）与强制结束进程（Android 13）分别验证通过：锁已清除、无继续续时，约 603 / 604 秒后因原超时自然息屏。强制结束阻止了 sticky 自动重启；此项不等同于普通 kill 后的系统自动重启测试，也未专门命中瞬时 pulse 持锁窗口。两台验收后恢复为守护开启。
+
+28 项单元测试通过，lint 无错误（2 项警告），Debug APK 组装通过。APK SHA-256：`6257db68f086e6f7e8cb53bbac0f7fb95c006f62854d7f72d016cff716990b48`。只分发 APK、说明与电脑脚本，真实设备配置、订阅地址、凭据和原始验收记录均不入库或发布。
+
 依据：[Android 无线调试](https://developer.android.com/tools/adb)、[AOSP 网络信任检查](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/services/core/java/com/android/server/adb/AdbDebuggingManager.java)、[前台 connectedDevice 服务](https://developer.android.com/develop/background-work/services/fgs/service-types#connected-device)。

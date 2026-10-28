@@ -90,6 +90,12 @@ final class ScreenStatusOverlay {
         return false; // 保留引用供下次清理，服务释放屏幕锁并明确显示限制。
     }
 
+    boolean isVisible() {
+        // addView 成功不足以证明当前仍有可见窗口；OEM 额外隐藏策略仍需实测。
+        return added && view != null && view.isAttachedToWindow() && view.isShown()
+                && view.getWindowVisibility() == android.view.View.VISIBLE;
+    }
+
     private int dp(int value) {
         return Math.round(value * context.getResources().getDisplayMetrics().density);
     }

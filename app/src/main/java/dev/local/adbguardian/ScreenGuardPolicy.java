@@ -27,6 +27,21 @@ final class ScreenGuardPolicy {
 
     // 初次启用也须达到恢复门槛，不能在滞回区直接取得锁。
     private boolean protectionPaused = true;
+    private boolean vivoPulseClaimed;
+    private long lastVivoPulseAt;
+
+    // 复用 evaluate 的 ACTIVE，不另设电池/热阈值。由服务主线程在 acquire 前复查实时门槛。
+    // 先占用限频额度，调用失败也不能被密集回调放大；关闭/暂停不会清除此时间。
+    boolean claimVivoPulse(String manufacturer, boolean overlayEnabled, State evaluated,
+            boolean runningReady, boolean interactive, boolean unlocked, boolean overlayAvailable,
+            long elapsedRealtime) {
+        if (!"vivo".equalsIgnoreCase(manufacturer) || !overlayEnabled || evaluated != State.ACTIVE
+                || !runningReady || !interactive || !unlocked || !overlayAvailable) return false;
+        if (vivoPulseClaimed && elapsedRealtime - lastVivoPulseAt < 30_000) return false;
+        vivoPulseClaimed = true;
+        lastVivoPulseAt = elapsedRealtime;
+        return true;
+    }
 
     State evaluate(boolean enabled, boolean ready, boolean interactive, boolean supported,
             Battery battery, int thermalStatus) {

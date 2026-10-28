@@ -255,7 +255,7 @@ public final class GuardService extends Service {
                     powerManager.isWakeLockLevelSupported(PowerManager.SCREEN_DIM_WAKE_LOCK),
                     battery.screenBattery, thermal);
             if (next == ScreenGuardPolicy.State.ACTIVE) {
-                next = requestScreenGuard();
+                next = requestScreenGuard(next);
             }
         } catch (SecurityException | IllegalStateException | IllegalArgumentException | UnsupportedOperationException error) {
             screenPolicy.evaluate(enabled, guardReady, false, true, battery.screenBattery, -1);
@@ -272,7 +272,7 @@ public final class GuardService extends Service {
     }
 
     @SuppressWarnings("deprecation")
-    private ScreenGuardPolicy.State requestScreenGuard() {
+    private ScreenGuardPolicy.State requestScreenGuard(ScreenGuardPolicy.State evaluated) {
         boolean compatible = store.screenOverlay();
         if (compatible) {
             if (screenLocked()) return ScreenGuardPolicy.State.WAITING_UNLOCK;
@@ -296,11 +296,34 @@ public final class GuardService extends Service {
         if (compatible && !Settings.canDrawOverlays(this)) return ScreenGuardPolicy.State.OVERLAY_PERMISSION;
         // isHeld 只用于检测申请失败，不能证明 OEM 允许后台 DIM 生效。
         if (!screenWakeLock.isHeld()) return ScreenGuardPolicy.State.FAILURE;
+        if (compatible && "vivo".equalsIgnoreCase(Build.MANUFACTURER)) {
+            pulseVivoScreen(evaluated);
+        }
         if (compatible) return ScreenGuardPolicy.State.REQUESTED_OVERLAY;
         if ("xiaomi".equalsIgnoreCase(Build.MANUFACTURER)) {
             return ScreenGuardPolicy.State.REQUESTED_BACKGROUND_LIMITED;
         }
         return ScreenGuardPolicy.State.ACTIVE;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void pulseVivoScreen(ScreenGuardPolicy.State evaluated) {
+        // 所有入口均在主线程；停止/选项变化即使先于 onDestroy，也不能使用旧 ACTIVE 续时。
+        if (!screenPolicy.claimVivoPulse(Build.MANUFACTURER, store.screenOverlay(), evaluated,
+                running && !destroyed && store.enabled() && store.keepScreenOn() && guardReady,
+                !screenOff && powerManager.isInteractive(), !screenLocked(),
+                Settings.canDrawOverlays(this) && screenOverlay.isVisible(),
+                SystemClock.elapsedRealtime())) return;
+        // 单独短暂屏幕锁；普通 DIM 锁不带 ON_AFTER_RELEASE。没有唤醒标志或异步持锁。
+        PowerManager.WakeLock pulse = powerManager.newWakeLock(
+                PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE,
+                "AdbGuardian:VivoPulse");
+        pulse.setReferenceCounted(false);
+        try {
+            pulse.acquire();
+        } finally {
+            if (pulse.isHeld()) pulse.release();
+        }
     }
 
     private boolean screenLocked() {
