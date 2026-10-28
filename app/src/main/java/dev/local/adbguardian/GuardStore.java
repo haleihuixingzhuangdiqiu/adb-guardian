@@ -16,6 +16,10 @@ final class GuardStore {
     void setEnabled(boolean value) { prefs.edit().putBoolean("enabled", value).commit(); }
     boolean keepAwake() { return prefs.getBoolean("keep_awake", true); }
     void setKeepAwake(boolean value) { prefs.edit().putBoolean("keep_awake", value).apply(); }
+    boolean keepScreenOn() { return prefs.getBoolean("keep_screen_on", false); }
+    void setKeepScreenOn(boolean value) { prefs.edit().putBoolean("keep_screen_on", value).apply(); }
+    boolean screenOverlay() { return prefs.getBoolean("screen_overlay", false); }
+    void setScreenOverlay(boolean value) { prefs.edit().putBoolean("screen_overlay", value).apply(); }
     boolean blocked() { return prefs.getBoolean("blocked", false); }
     boolean pending() { return prefs.getBoolean("pending", false); }
     void savePolicy(GuardPolicy policy) {

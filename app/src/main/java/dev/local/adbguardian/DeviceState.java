@@ -30,7 +30,23 @@ final class DeviceState {
         return false;
     }
     static boolean charging(Context context) {
+        return battery(context).charging;
+    }
+    static final class BatterySnapshot {
+        final boolean charging;
+        final ScreenGuardPolicy.Battery screenBattery;
+        BatterySnapshot(boolean charging, ScreenGuardPolicy.Battery screenBattery) {
+            this.charging = charging;
+            this.screenBattery = screenBattery;
+        }
+    }
+    static BatterySnapshot battery(Context context) {
         Intent battery = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        return battery != null && battery.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0;
+        if (battery == null) return new BatterySnapshot(false, null);
+        Integer temperature = battery.hasExtra(BatteryManager.EXTRA_TEMPERATURE)
+                ? battery.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) : null;
+        return new BatterySnapshot(battery.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0,
+                new ScreenGuardPolicy.Battery(battery.getIntExtra(BatteryManager.EXTRA_LEVEL, -1),
+                        battery.getIntExtra(BatteryManager.EXTRA_SCALE, -1), temperature));
     }
 }

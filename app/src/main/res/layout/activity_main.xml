@@ -46,6 +46,22 @@
                 android:layout_height="wrap_content" android:minHeight="56dp" android:text="@string/keep_awake"
                 android:textSize="16sp" android:textColor="@color/ink" android:switchPadding="16dp" />
             <TextView style="@style/Body" android:text="@string/power_help" android:textSize="13sp" />
+            <Switch android:id="@+id/keep_screen_on" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="56dp" android:text="@string/keep_screen_on"
+                android:textSize="16sp" android:textColor="@color/ink" android:switchPadding="16dp"
+                android:layout_marginTop="12dp" />
+            <TextView android:id="@+id/screen_status" style="@style/Body" android:text="@string/screen_off"
+                android:textStyle="bold" android:accessibilityLiveRegion="polite" />
+            <TextView style="@style/Body" android:text="@string/screen_help" android:textSize="13sp" />
+            <Switch android:id="@+id/screen_overlay" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="56dp" android:text="@string/screen_overlay_title"
+                android:textSize="16sp" android:textColor="@color/ink" android:switchPadding="16dp"
+                android:layout_marginTop="12dp" />
+            <TextView style="@style/Body" android:text="@string/screen_overlay_help" android:textSize="13sp" />
+            <TextView android:id="@+id/overlay_permission" style="@style/Body"
+                android:text="@string/screen_overlay_permission_missing" android:textSize="13sp" />
+            <Button android:id="@+id/overlay_settings" style="@style/ActionButton"
+                android:text="@string/screen_overlay_settings" />
             <Button android:id="@+id/background" style="@style/ActionButton"
                 android:text="@string/background_settings" android:layout_marginTop="12dp" />
             <TextView style="@style/Body" android:text="@string/background_help" android:textSize="13sp" />

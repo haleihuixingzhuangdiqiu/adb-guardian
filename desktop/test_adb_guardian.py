@@ -175,6 +175,19 @@ class ActivationTests(unittest.TestCase):
             self.activate()
         self.assertFalse(self.path.exists())
 
+    def test_origin_os_diagnostics_do_not_block_verified_permission(self):
+        self.runner.replies[("-s", self.serial, "shell", "dumpsys", "package", g.PACKAGE)] = g.Result(
+            out="Packages:\n"
+                "  Package [dev.local.adbguardian]:\n"
+                "    install permissions:\n"
+                "      android.permission.WRITE_SECURE_SETTINGS: granted=true\n"
+                "  mFailedPackageNamesPrimary: []\n"
+                "  mFailedPackageNamesSecondary: []\n"
+        )
+        saved = self.activate()
+        self.assertEqual(saved["serialno"], "REAL123")
+        self.assertEqual(g.load_config(self.path)["devices"], [saved])
+
     def test_silent_vendor_denial_requires_verified_permission(self):
         self.runner.replies[("-s", self.serial, "shell", "dumpsys", "package", g.PACKAGE)] = g.Result(out=g.PERMISSION + ": granted=false")
         with self.assertRaisesRegex(g.GuardianError, "无法确认"):

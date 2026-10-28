@@ -55,6 +55,22 @@ public final class MainActivity extends Activity {
             store.setKeepAwake(checked);
             if (GuardService.running) startGuard(false);
         });
+        Switch screen = findViewById(R.id.keep_screen_on);
+        screen.setChecked(store.keepScreenOn());
+        screen.setOnCheckedChangeListener((button, checked) -> {
+            store.setKeepScreenOn(checked);
+            GuardService.screenOptionChanged();
+            render();
+        });
+        Switch overlay = findViewById(R.id.screen_overlay);
+        overlay.setChecked(store.screenOverlay());
+        overlay.setOnCheckedChangeListener((button, checked) -> {
+            store.setScreenOverlay(checked);
+            GuardService.screenOptionChanged();
+            render();
+        });
+        findViewById(R.id.overlay_settings).setOnClickListener(view -> openSettings(
+                new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()))));
         findViewById(R.id.background).setOnClickListener(view -> new AlertDialog.Builder(this)
                 .setTitle(R.string.background_dialog_title).setMessage(R.string.background_dialog_body)
                 .setNegativeButton(R.string.cancel, null)
@@ -66,7 +82,7 @@ public final class MainActivity extends Activity {
     private void toggle() {
         if (store.enabled()) {
             store.setEnabled(false);
-            store.status("守护已停止", "自动恢复与加强保活已停止，现有无线调试设置保持不变。");
+            store.status("守护已停止", "自动恢复、加强保活与屏幕保持已停止，现有无线调试设置保持不变。");
             stopService(new Intent(this, GuardService.class));
             render();
         } else {
@@ -109,7 +125,9 @@ public final class MainActivity extends Activity {
     }
     private void openSettings(Intent intent) {
         try { startActivity(intent); }
-        catch (ActivityNotFoundException error) { Toast.makeText(this, R.string.settings_unavailable, Toast.LENGTH_LONG).show(); }
+        catch (ActivityNotFoundException | SecurityException error) {
+            Toast.makeText(this, R.string.settings_unavailable, Toast.LENGTH_LONG).show();
+        }
     }
 
     private void render() {
@@ -132,6 +150,12 @@ public final class MainActivity extends Activity {
                 + "    ·    Wi-Fi  " + (DeviceState.wifi(this) ? "已连接" : "未连接")
                 + "\n无线调试开关  " + setting + "    ·    " + (DeviceState.charging(this) ? "正在接电" : "使用电池");
         ((TextView) findViewById(R.id.facts)).setText(facts);
+        int screenStatus = GuardService.screenStatusResource();
+        ((TextView) findViewById(R.id.screen_status)).setText(
+                screenStatus == R.string.screen_overlay_cleanup_failure ? screenStatus
+                        : !store.enabled() || !running || !store.keepScreenOn() ? R.string.screen_off : screenStatus);
+        ((TextView) findViewById(R.id.overlay_permission)).setText(Settings.canDrawOverlays(this)
+                ? R.string.screen_overlay_permission_granted : R.string.screen_overlay_permission_missing);
         ((Button) findViewById(R.id.toggle)).setText(store.enabled() ? R.string.stop : R.string.start);
         Button retry = findViewById(R.id.retry);
         retry.setVisibility(store.blocked() || (store.enabled() && !running) ? View.VISIBLE : View.GONE);
@@ -139,6 +163,10 @@ public final class MainActivity extends Activity {
         String events = store.events();
         ((TextView) findViewById(R.id.events)).setText(events.isEmpty() ? getString(R.string.no_events) : events);
     }
-    @Override protected void onResume() { super.onResume(); handler.post(refresh); }
+    @Override protected void onResume() {
+        super.onResume();
+        GuardService.screenOptionChanged();
+        handler.post(refresh);
+    }
     @Override protected void onPause() { handler.removeCallbacksAndMessages(null); super.onPause(); }
 }

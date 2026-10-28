@@ -279,7 +279,7 @@ def activate(runner, serial, path, emit=print):
         raise GuardianError("WRITE_SECURE_SETTINGS 授权失败或厂商拒绝；未登记成功，请检查手机限制")
     # 不读完整 settings。定向查看本 App 权限，且绝不打印原始 dumpsys 响应。
     permission = runner.run(["-s", serial, "shell", "dumpsys", "package", PACKAGE])
-    if failure(permission) or not re.search(re.escape(PERMISSION) + r":\s*granted=true\b", permission.out):
+    if permission.code or permission.timed_out or not re.search(re.escape(PERMISSION) + r":\s*granted=true\b", permission.out):
         raise GuardianError("无法确认 WRITE_SECURE_SETTINGS 已授予（可能被厂商拒绝）；未登记成功")
     record = {"serialno": serialno, "guid": guid, "model": model, "endpoint": endpoint(serial), "activated_at": now_text()}
     if endpoint(serial) is None and "._adb" not in serial:
