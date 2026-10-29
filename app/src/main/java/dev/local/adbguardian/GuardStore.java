@@ -20,6 +20,14 @@ final class GuardStore {
     void setKeepScreenOn(boolean value) { prefs.edit().putBoolean("keep_screen_on", value).apply(); }
     boolean screenOverlay() { return prefs.getBoolean("screen_overlay", false); }
     void setScreenOverlay(boolean value) { prefs.edit().putBoolean("screen_overlay", value).apply(); }
+    OverlayPosition overlayPosition() {
+        return new OverlayPosition(prefs.getBoolean("overlay_right", true),
+                prefs.getFloat("overlay_height_fraction", 0.5f));
+    }
+    void setOverlayPosition(OverlayPosition value) {
+        prefs.edit().putBoolean("overlay_right", value.right)
+                .putFloat("overlay_height_fraction", value.heightFraction).apply();
+    }
     boolean blocked() { return prefs.getBoolean("blocked", false); }
     boolean pending() { return prefs.getBoolean("pending", false); }
     void savePolicy(GuardPolicy policy) {

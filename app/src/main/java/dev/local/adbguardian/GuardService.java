@@ -85,7 +85,7 @@ public final class GuardService extends Service {
         policy = new GuardPolicy(store.pending(), store.blocked(), SystemClock.elapsedRealtime());
         powerManager = getSystemService(PowerManager.class);
         keyguardManager = getSystemService(KeyguardManager.class);
-        screenOverlay = new ScreenStatusOverlay(this);
+        screenOverlay = new ScreenStatusOverlay(this, this::onScreenOverlayFailure);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "AdbGuardian:Charging");
         wakeLock.setReferenceCounted(false);
         screenOff = !powerManager.isInteractive();
@@ -337,6 +337,12 @@ public final class GuardService extends Service {
     private boolean releaseScreenGuard() {
         releaseScreenWakeLock();
         return screenOverlay == null || screenOverlay.hide();
+    }
+
+    private void onScreenOverlayFailure(boolean removed) {
+        releaseScreenWakeLock();
+        screenStatus = removed ? ScreenGuardPolicy.State.OVERLAY_FAILURE : ScreenGuardPolicy.State.OVERLAY_CLEANUP_FAILURE;
+        updateNotification();
     }
 
     static int screenStatusResource() {

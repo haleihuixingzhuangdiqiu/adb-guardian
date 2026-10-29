@@ -21,6 +21,12 @@
     <string name="screen_active">屏幕保持：已请求</string>
     <string name="screen_overlay_title">兼容悬浮状态条</string>
     <string name="screen_overlay_label">ADB·屏幕保持</string>
+    <string name="screen_overlay_handle">ADB 屏幕保持把手，点按展开；长按再拖动贴边，也可使用移动操作调整位置</string>
+    <string name="screen_overlay_expanded">ADB·屏幕保持，约3秒后收起；长按再拖动贴边或使用移动操作调整位置</string>
+    <string name="screen_overlay_move_left">移到左侧边缘</string>
+    <string name="screen_overlay_move_right">移到右侧边缘</string>
+    <string name="screen_overlay_move_up">向上移动</string>
+    <string name="screen_overlay_move_down">向下移动</string>
     <string name="screen_overlay_requested">屏幕保持：已请求·请保留状态条</string>
     <string name="screen_background_limited">屏幕保持：已请求，后台可能受系统限制</string>
     <string name="screen_unlock_waiting">屏幕保持：已暂停，解锁后再检查</string>
@@ -30,7 +36,7 @@
     <string name="screen_overlay_settings">打开系统悬浮窗授权设置</string>
     <string name="screen_overlay_permission_granted">悬浮窗权限：已允许</string>
     <string name="screen_overlay_permission_missing">悬浮窗权限：未允许，兼容模式无法请求屏幕保持</string>
-    <string name="screen_overlay_help">部分小米和 vivo 系统需要此兼容模式。请允许悬浮窗并保留侧边状态条；它不响应触摸。仅在已解锁且屏幕保持条件满足时运行，实际效果需按机型验证。\n关屏或保护暂停时停止保持；手动关屏不会自动点亮。vivo 关闭保持后，屏幕可能仍需等待原来的熄屏时间（当前若设为10分钟，可能再等约10分钟）。</string>
+    <string name="screen_overlay_help">部分小米和 vivo 系统需要此兼容模式。请允许悬浮窗并保留侧边小把手；点按展开状态文字，约3秒收起；长按把手再拖动，松手后吸附最近的左右边缘。位置会记住，也可通过无障碍移动操作调整。把手以外可正常操作。仅在已解锁且屏幕保持条件满足时运行，实际效果需按机型验证。\n关屏或保护暂停时停止保持；手动关屏不会自动点亮。vivo 关闭保持后，屏幕可能仍需等待原来的熄屏时间（当前若设为10分钟，可能再等约10分钟）。</string>
     <string name="screen_waiting">屏幕保持：关屏等待，手动亮屏后再检查</string>
     <string name="screen_protection">屏幕保持：保护暂停（电量、温度或数据不足）</string>
     <string name="screen_unsupported">屏幕保持：系统不支持</string>
