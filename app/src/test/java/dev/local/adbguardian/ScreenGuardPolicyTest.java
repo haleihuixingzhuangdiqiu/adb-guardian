@@ -10,7 +10,7 @@ public final class ScreenGuardPolicyTest {
     }
 
     private static ScreenGuardPolicy.State evaluate(ScreenGuardPolicy policy, int percent, int temperature, int thermal) {
-        return policy.evaluate(true, true, true, true, battery(percent, temperature), thermal);
+        return policy.evaluate(true, true, true, battery(percent, temperature), thermal);
     }
 
     private static ScreenGuardPolicy activePolicy() {
@@ -51,6 +51,23 @@ public final class ScreenGuardPolicyTest {
         }
     }
 
+    @Test public void moderateThermalPausesAt375AndReportsThermalRecoveryGate() {
+        ScreenGuardPolicy policy = activePolicy();
+        assertEquals(PROTECTION, evaluate(policy, 80, 375, 2));
+        assertEquals("等待系统热状态≤轻度（1）", ScreenGuardPolicy.protectionReason(battery(80, 375), 2));
+        assertEquals(PROTECTION, evaluate(policy, 80, 390, 1));
+        assertEquals("等待电池温度≤38℃", ScreenGuardPolicy.protectionReason(battery(80, 390), 1));
+        assertEquals(ACTIVE, evaluate(policy, 80, 380, 1));
+    }
+
+    @Test public void protectionReasonIncludesAllUnmetRecoveryRequirementsAndUnknowns() {
+        assertEquals("等待电量≥25%；等待电池温度≤38℃；等待系统热状态≤轻度（1）",
+                ScreenGuardPolicy.protectionReason(battery(20, 400), 2));
+        assertEquals("电量读数不可用；电池温度读数不可用；系统热状态不可用",
+                ScreenGuardPolicy.protectionReason(null, -1));
+        assertEquals("电量读数不可用", ScreenGuardPolicy.protectionReason(battery(101, 300), 0));
+    }
+
     @Test public void recoveryRequiresBatteryTemperatureAndThermalTogether() {
         ScreenGuardPolicy policy = activePolicy();
         assertEquals(PROTECTION, evaluate(policy, 20, 400, 2));
@@ -68,7 +85,7 @@ public final class ScreenGuardPolicyTest {
         };
         for (ScreenGuardPolicy.Battery sample : unknown) {
             ScreenGuardPolicy policy = activePolicy();
-            assertEquals(PROTECTION, policy.evaluate(true, true, true, true, sample, 0));
+            assertEquals(PROTECTION, policy.evaluate(true, true, true, sample, 0));
             assertEquals(PROTECTION, evaluate(policy, 24, 380, 1));
             assertEquals(ACTIVE, evaluate(policy, 25, 380, 1));
         }
@@ -85,37 +102,36 @@ public final class ScreenGuardPolicyTest {
 
     @Test public void nonStandardBatteryScaleUsesActualPercentageWithoutRounding() {
         ScreenGuardPolicy policy = activePolicy();
-        assertEquals(ACTIVE, policy.evaluate(true, true, true, true,
+        assertEquals(ACTIVE, policy.evaluate(true, true, true,
                 new ScreenGuardPolicy.Battery(201, 1000, 300), 0));
-        assertEquals(PROTECTION, policy.evaluate(true, true, true, true,
+        assertEquals(PROTECTION, policy.evaluate(true, true, true,
                 new ScreenGuardPolicy.Battery(200, 1000, 300), 0));
-        assertEquals(PROTECTION, policy.evaluate(true, true, true, true,
+        assertEquals(PROTECTION, policy.evaluate(true, true, true,
                 new ScreenGuardPolicy.Battery(249, 1000, 300), 0));
-        assertEquals(ACTIVE, policy.evaluate(true, true, true, true,
+        assertEquals(ACTIVE, policy.evaluate(true, true, true,
                 new ScreenGuardPolicy.Battery(250, 1000, 300), 0));
     }
 
     @Test public void manualScreenOffAndDelayedRenewalsCannotBecomeActiveUntilInteractive() {
         ScreenGuardPolicy policy = activePolicy();
         for (int renewal = 0; renewal < 5; renewal++) {
-            assertEquals(SCREEN_OFF, policy.evaluate(true, true, false, true, battery(80, 300), 0));
+            assertEquals(SCREEN_OFF, policy.evaluate(true, false, true, battery(80, 300), 0));
         }
-        assertEquals(ACTIVE, policy.evaluate(true, true, true, true, battery(80, 300), 0));
+        assertEquals(ACTIVE, policy.evaluate(true, true, true, battery(80, 300), 0));
     }
 
     @Test public void healthRecoveryWhileScreenOffDoesNotActivate() {
         ScreenGuardPolicy policy = activePolicy();
         assertEquals(PROTECTION, evaluate(policy, 20, 400, 2));
-        assertEquals(SCREEN_OFF, policy.evaluate(true, true, false, true, battery(25, 380), 1));
+        assertEquals(SCREEN_OFF, policy.evaluate(true, false, true, battery(25, 380), 1));
         assertEquals(ACTIVE, evaluate(policy, 25, 380, 1));
     }
 
-    @Test public void featureOffStoppedGuardAndUnsupportedLevelNeverActivate() {
+    @Test public void disabledScreenGuardAndUnsupportedLevelNeverActivate() {
         ScreenGuardPolicy policy = activePolicy();
-        assertEquals(OFF, policy.evaluate(false, true, true, true, battery(80, 300), 0));
+        assertEquals(OFF, policy.evaluate(false, true, true, battery(80, 300), 0));
         assertEquals(PROTECTION, evaluate(policy, 24, 380, 1));
-        assertEquals(WAITING_GUARD, policy.evaluate(true, false, true, true, battery(80, 300), 0));
-        assertEquals(UNSUPPORTED, policy.evaluate(true, true, true, false, battery(80, 300), 0));
-        assertEquals(OFF, policy.evaluate(false, false, false, false, null, -1));
+        assertEquals(UNSUPPORTED, policy.evaluate(true, true, false, battery(80, 300), 0));
+        assertEquals(OFF, policy.evaluate(false, false, false, null, -1));
     }
 }

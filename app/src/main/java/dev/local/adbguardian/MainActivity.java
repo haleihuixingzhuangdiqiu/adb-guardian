@@ -152,8 +152,9 @@ public final class MainActivity extends Activity {
         ((TextView) findViewById(R.id.facts)).setText(facts);
         int screenStatus = GuardService.screenStatusResource();
         ((TextView) findViewById(R.id.screen_status)).setText(
-                screenStatus == R.string.screen_overlay_cleanup_failure ? screenStatus
-                        : !store.enabled() || !running || !store.keepScreenOn() ? R.string.screen_off : screenStatus);
+                screenStatus == R.string.screen_overlay_cleanup_failure ? getString(screenStatus)
+                        : !store.enabled() || !running || !store.keepScreenOn() ? getString(R.string.screen_off)
+                        : GuardService.screenStatusText(this));
         ((TextView) findViewById(R.id.overlay_permission)).setText(Settings.canDrawOverlays(this)
                 ? R.string.screen_overlay_permission_granted : R.string.screen_overlay_permission_missing);
         ((Button) findViewById(R.id.toggle)).setText(store.enabled() ? R.string.stop : R.string.start);

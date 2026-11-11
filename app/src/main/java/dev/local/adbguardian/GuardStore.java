@@ -11,7 +11,8 @@ import java.util.Locale;
 @SuppressLint("ApplySharedPref")
 final class GuardStore {
     private final SharedPreferences prefs;
-    GuardStore(Context context) { prefs = context.getSharedPreferences("guardian", Context.MODE_PRIVATE); }
+    GuardStore(Context context) { this(context.getSharedPreferences("guardian", Context.MODE_PRIVATE)); }
+    GuardStore(SharedPreferences prefs) { this.prefs = prefs; }
     boolean enabled() { return prefs.getBoolean("enabled", false); }
     void setEnabled(boolean value) { prefs.edit().putBoolean("enabled", value).commit(); }
     boolean keepAwake() { return prefs.getBoolean("keep_awake", true); }
@@ -45,14 +46,35 @@ final class GuardStore {
                 .putString("detail", detail).putLong("checked_at", now);
         // 只记录状态变化；不记录配对码、授权密钥、网络名称或原始系统响应。
         if (!title.equals(title()) || !detail.equals(detail())) {
-            String time = new SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault()).format(new Date(now));
-            String[] previous = events().split("\n");
-            StringBuilder history = new StringBuilder(time).append("  ").append(title);
-            for (int i = 0; i < Math.min(previous.length, 29); i++) {
-                if (!previous[i].isEmpty()) history.append('\n').append(previous[i]);
-            }
-            editor.putString("events", history.toString());
+            appendEvent(editor, title, now);
         }
         editor.apply();
+    }
+
+    void screenStatus(ScreenGuardPolicy.State state, String label, String reason,
+            ScreenGuardPolicy.Battery battery, int thermal) {
+        // 读数变化本身不记事件，避免每轮检查刷屏；保护原因改变才视为新转换。
+        String transition = state.name() + ":" + reason;
+        if (transition.equals(prefs.getString("screen_transition", ""))) return;
+        String percent = battery != null && battery.scale > 0 && battery.level >= 0 && battery.level <= battery.scale
+                ? String.format(Locale.ROOT, "%.1f%%", battery.percent()) : "未知";
+        String temperature = battery != null && battery.temperatureTenths != null
+                ? String.format(Locale.ROOT, "%.1f℃", battery.temperatureTenths / 10.0) : "未知";
+        String thermalReading = thermal >= 0 && thermal <= 6 ? Integer.toString(thermal) : "未知";
+        String event = label + (reason.isEmpty() ? "" : "（" + reason + "）")
+                + " · 电量 " + percent + " · 电池 " + temperature + " · 热状态 " + thermalReading;
+        SharedPreferences.Editor editor = prefs.edit().putString("screen_transition", transition);
+        appendEvent(editor, event, System.currentTimeMillis());
+        editor.apply();
+    }
+
+    private void appendEvent(SharedPreferences.Editor editor, String event, long now) {
+        String time = new SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault()).format(new Date(now));
+        String[] previous = events().split("\n");
+        StringBuilder history = new StringBuilder(time).append("  ").append(event);
+        for (int i = 0; i < Math.min(previous.length, 29); i++) {
+            if (!previous[i].isEmpty()) history.append('\n').append(previous[i]);
+        }
+        editor.putString("events", history.toString());
     }
 }

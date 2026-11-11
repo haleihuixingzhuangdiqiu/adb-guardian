@@ -33,6 +33,7 @@ public final class GuardService extends Service {
     static boolean running;
     private static WeakReference<GuardService> activeService = new WeakReference<>(null);
     private static ScreenGuardPolicy.State screenStatus = ScreenGuardPolicy.State.OFF;
+    private static String screenProtectionReason = "";
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable check = this::inspect;
@@ -44,7 +45,6 @@ public final class GuardService extends Service {
     private KeyguardManager keyguardManager;
     private ScreenStatusOverlay screenOverlay;
     private final ScreenGuardPolicy screenPolicy = new ScreenGuardPolicy();
-    private boolean guardReady;
     private boolean screenOff;
     private boolean destroyed;
     private boolean thermalRegistered;
@@ -162,13 +162,11 @@ public final class GuardService extends Service {
             store.savePolicy(policy);
             report("系统限制调试设置", "系统拒绝读取无线调试状态。请检查一次性授权；此机型可能需要单独适配。");
             releaseWakeLock();
-            guardReady = false;
             updateScreenGuard(battery);
             schedule(CHECK_INTERVAL_MS);
             return;
         }
         store.savePolicy(policy);
-        guardReady = state == GuardPolicy.State.READY;
         switch (state) {
             case PERMISSION:
                 report("等待一次性授权", "请从已连接的电脑执行授权命令，再回到本应用。");
@@ -237,9 +235,9 @@ public final class GuardService extends Service {
         if (!running || destroyed) return;
         boolean enabled = store.keepScreenOn() && store.enabled();
         ScreenGuardPolicy.State next;
+        int thermal = -1;
         try {
             // 不依赖插电状态。热状态读取/监听失败时，按未知数据暂停，并在下次更新重试。
-            int thermal = -1;
             if (enabled) {
                 if (!thermalRegistered) {
                     powerManager.addThermalStatusListener(handler::post, thermalListener);
@@ -250,7 +248,7 @@ public final class GuardService extends Service {
                 powerManager.removeThermalStatusListener(thermalListener);
                 thermalRegistered = false;
             }
-            next = screenPolicy.evaluate(enabled, guardReady,
+            next = screenPolicy.evaluate(enabled,
                     !screenOff && powerManager.isInteractive(),
                     powerManager.isWakeLockLevelSupported(PowerManager.SCREEN_DIM_WAKE_LOCK),
                     battery.screenBattery, thermal);
@@ -258,7 +256,7 @@ public final class GuardService extends Service {
                 next = requestScreenGuard(next);
             }
         } catch (SecurityException | IllegalStateException | IllegalArgumentException | UnsupportedOperationException error) {
-            screenPolicy.evaluate(enabled, guardReady, false, true, battery.screenBattery, -1);
+            screenPolicy.evaluate(enabled, false, true, battery.screenBattery, -1);
             // 不修改用户选项；后续事件或例行检查可以恢复。
             next = enabled ? ScreenGuardPolicy.State.FAILURE : ScreenGuardPolicy.State.OFF;
         }
@@ -267,8 +265,15 @@ public final class GuardService extends Service {
                 && next != ScreenGuardPolicy.State.REQUESTED_BACKGROUND_LIMITED) {
             if (!releaseScreenGuard()) next = ScreenGuardPolicy.State.OVERLAY_CLEANUP_FAILURE;
         }
-        screenStatus = next;
+        setScreenStatus(next, battery.screenBattery, thermal);
         updateNotification();
+    }
+
+    private void setScreenStatus(ScreenGuardPolicy.State next, ScreenGuardPolicy.Battery battery, int thermal) {
+        screenStatus = next;
+        screenProtectionReason = next == ScreenGuardPolicy.State.PROTECTION
+                ? ScreenGuardPolicy.protectionReason(battery, thermal) : "";
+        store.screenStatus(next, getString(screenStatusResource()), screenProtectionReason, battery, thermal);
     }
 
     @SuppressWarnings("deprecation")
@@ -310,7 +315,7 @@ public final class GuardService extends Service {
     private void pulseVivoScreen(ScreenGuardPolicy.State evaluated) {
         // 所有入口均在主线程；停止/选项变化即使先于 onDestroy，也不能使用旧 ACTIVE 续时。
         if (!screenPolicy.claimVivoPulse(Build.MANUFACTURER, store.screenOverlay(), evaluated,
-                running && !destroyed && store.enabled() && store.keepScreenOn() && guardReady,
+                running && !destroyed && store.enabled() && store.keepScreenOn(),
                 !screenOff && powerManager.isInteractive(), !screenLocked(),
                 Settings.canDrawOverlays(this) && screenOverlay.isVisible(),
                 SystemClock.elapsedRealtime())) return;
@@ -341,8 +346,14 @@ public final class GuardService extends Service {
 
     private void onScreenOverlayFailure(boolean removed) {
         releaseScreenWakeLock();
-        screenStatus = removed ? ScreenGuardPolicy.State.OVERLAY_FAILURE : ScreenGuardPolicy.State.OVERLAY_CLEANUP_FAILURE;
+        setScreenStatus(removed ? ScreenGuardPolicy.State.OVERLAY_FAILURE
+                : ScreenGuardPolicy.State.OVERLAY_CLEANUP_FAILURE, null, -1);
         updateNotification();
+    }
+
+    static String screenStatusText(Context context) {
+        String status = context.getString(screenStatusResource());
+        return screenProtectionReason.isEmpty() ? status : status + "（" + screenProtectionReason + "）";
     }
 
     static int screenStatusResource() {
@@ -357,7 +368,6 @@ public final class GuardService extends Service {
             case SCREEN_OFF: return R.string.screen_waiting;
             case PROTECTION: return R.string.screen_protection;
             case UNSUPPORTED: return R.string.screen_unsupported;
-            case WAITING_GUARD: return R.string.screen_guard_waiting;
             case FAILURE: return R.string.screen_failure;
             default: return R.string.screen_off;
         }
@@ -366,11 +376,10 @@ public final class GuardService extends Service {
     private void stopLocksAndCallbacks() {
         running = false;
         activeService.clear();
-        guardReady = false;
         handler.removeCallbacksAndMessages(null);
         boolean removed = releaseScreenGuard();
-        screenStatus = removed ? ScreenGuardPolicy.State.OFF : ScreenGuardPolicy.State.OVERLAY_CLEANUP_FAILURE;
-        if (!removed) store.status("悬浮状态条移除失败", "屏幕锁已释放；请重新打开应用检查。若状态条仍在，可从系统设置强行停止本应用。");
+        setScreenStatus(removed ? ScreenGuardPolicy.State.OFF
+                : ScreenGuardPolicy.State.OVERLAY_CLEANUP_FAILURE, null, -1);
         releaseWakeLock();
     }
 
@@ -381,7 +390,7 @@ public final class GuardService extends Service {
     }
     private void updateNotification() {
         if (!running || destroyed) return;
-        String title = guardTitle + " · " + getString(screenStatusResource());
+        String title = guardTitle + " · " + screenStatusText(this);
         if (!title.equals(notificationStatus)) {
             notificationStatus = title;
             getSystemService(NotificationManager.class).notify(NOTIFICATION_ID, notification(title));
